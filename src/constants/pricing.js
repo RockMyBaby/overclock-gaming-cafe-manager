@@ -1,0 +1,1 @@
+export const PRICING = { 1: 100, 2: 180, 3: 250, 4: 300 };

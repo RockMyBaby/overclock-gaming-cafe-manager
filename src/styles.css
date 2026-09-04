@@ -181,3 +181,19 @@
   text-align: center;
   color: #aaa;
 }
+
+.show-more-games {
+  background: transparent;
+  border: none;
+  padding: 4px 0;
+  margin-top: 4px;
+  color: #60a5fa;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.show-more-games:hover {
+  text-decoration: underline;
+}
