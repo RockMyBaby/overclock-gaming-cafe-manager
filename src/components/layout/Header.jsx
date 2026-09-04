@@ -6,7 +6,11 @@ const pageTitles = {
   pricing: "Pricing Setup",
 };
 
-export default function Header({ page, now }) {
+export default function Header({
+  page,
+  now,
+  onAdminAccess,
+}) {
   return (
     <header>
       <div>
@@ -19,15 +23,24 @@ export default function Header({ page, now }) {
         <h1>{pageTitles[page]}</h1>
       </div>
 
-      <div className="live">
-        ● LIVE
+      <div className="header-actions">
+        <div className="live">
+          ● LIVE
 
-        <span>
-          {now.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </span>
+          <span>
+            {now.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </span>
+        </div>
+
+        <button
+          className="admin-login-btn"
+          onClick={onAdminAccess}
+        >
+          👑 Admin Login
+        </button>
       </div>
     </header>
   );
