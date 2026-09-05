@@ -1,11 +1,6 @@
 import { useState } from "react";
 
-export default function SystemCard({
-  system,
-  games,
-  startStop,
-  edit,
-}) {
+export default function SystemCard({ system, games, startStop, edit, isAdmin }) {
   const [showAllGames, setShowAllGames] = useState(false);
 
   const installedGames = games.filter((game) =>
@@ -16,24 +11,19 @@ export default function SystemCard({
     <article className={`system-card ${system.status.toLowerCase()}`}>
       <div className="card-top">
         <div>
-          <span
-            className={`status-dot ${system.status.toLowerCase()}`}
-          />
+          <span className={`status-dot ${system.status.toLowerCase()}`} />
           {system.status}
         </div>
 
-        <button
-          className="icon-btn"
-          onClick={() => edit(system)}
-        >
-          ✎
-        </button>
+        {isAdmin && (
+          <button className="icon-btn" onClick={() => edit(system)}>
+            ✎
+          </button>
+        )}
       </div>
 
       <div className="console-title">
-        <div className="console-icon">
-          {system.type === "PS5" ? "5" : "4"}
-        </div>
+        <div className="console-icon">{system.type === "PS5" ? "5" : "4"}</div>
 
         <div>
           <h3>{system.name}</h3>
@@ -63,22 +53,17 @@ export default function SystemCard({
 
         {installedGames.length > 0 ? (
           <>
-            {(showAllGames
-              ? installedGames
-              : installedGames.slice(0, 3)
-            ).map((game) => (
-              <div key={game.id}>
-                • {game.title}
-              </div>
-            ))}
+            {(showAllGames ? installedGames : installedGames.slice(0, 3)).map(
+              (game) => (
+                <div key={game.id}>• {game.title}</div>
+              ),
+            )}
 
             {installedGames.length > 3 && (
               <button
                 type="button"
                 className="show-more-games"
-                onClick={() =>
-                  setShowAllGames((prev) => !prev)
-                }
+                onClick={() => setShowAllGames((prev) => !prev)}
               >
                 {showAllGames
                   ? "Show less"
@@ -91,18 +76,16 @@ export default function SystemCard({
         )}
       </div>
 
-      <button
-        className={
-          system.status === "Playing"
-            ? "stop-btn"
-            : "start-btn"
-        }
-        onClick={() => startStop(system)}
-      >
-        {system.status === "Playing"
-          ? "■ End & Bill Session"
-          : "▶ Start Session"}
-      </button>
+      {isAdmin && (
+        <button
+          className={system.status === "Playing" ? "stop-btn" : "start-btn"}
+          onClick={() => startStop(system)}
+        >
+          {system.status === "Playing"
+            ? "■ End & Bill Session"
+            : "▶ Start Session"}
+        </button>
+      )}
     </article>
   );
 }

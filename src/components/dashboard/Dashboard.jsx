@@ -10,6 +10,7 @@ export default function Dashboard({
   setPage,
   startStop,
   setEditingSystem,
+  isAdmin,
 }) {
   return (
     <section>
@@ -44,9 +45,11 @@ export default function Dashboard({
           <h2>System Status</h2>
           <p>Start, stop and manage every console from one place.</p>
         </div>
-        <button className="primary" onClick={() => setPage("systems")}>
-          Manage Systems →
-        </button>
+        {isAdmin && (
+          <button className="primary" onClick={() => setPage("systems")}>
+            Manage Systems →
+          </button>
+        )}
       </div>
       <div className="system-grid">
         {systems.map((s) => (
@@ -56,6 +59,7 @@ export default function Dashboard({
             games={games}
             startStop={startStop}
             edit={setEditingSystem}
+            isAdmin={isAdmin}
           />
         ))}
       </div>
