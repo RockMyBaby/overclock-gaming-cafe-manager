@@ -6,11 +6,7 @@ import {
   signOut,
 } from "firebase/auth";
 
-import {
-  doc,
-  getDoc,
-  setDoc,
-} from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 
 import { auth, db } from "../config/firebase";
 
@@ -22,8 +18,7 @@ export default function AdminAccess({ onClose }) {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
 
-  const [confirmationResult, setConfirmationResult] =
-    useState(null);
+  const [confirmationResult, setConfirmationResult] = useState(null);
 
   const [step, setStep] = useState("phone");
 
@@ -32,14 +27,13 @@ export default function AdminAccess({ onClose }) {
 
   useEffect(() => {
     if (!recaptchaVerifierRef.current) {
-      recaptchaVerifierRef.current =
-        new RecaptchaVerifier(
-          auth,
-          "recaptcha-container",
-          {
-            size: "invisible",
-          },
-        );
+      recaptchaVerifierRef.current = new RecaptchaVerifier(
+        auth,
+        "recaptcha-container",
+        {
+          size: "invisible",
+        },
+      );
     }
 
     return () => {
@@ -56,9 +50,7 @@ export default function AdminAccess({ onClose }) {
     setError("");
 
     if (phone.length !== 10) {
-      setError(
-        "Please enter a valid 10-digit mobile number.",
-      );
+      setError("Please enter a valid 10-digit mobile number.");
       return;
     }
 
@@ -67,22 +59,18 @@ export default function AdminAccess({ onClose }) {
 
       const formattedPhone = `+91${phone}`;
 
-      const result =
-        await signInWithPhoneNumber(
-          auth,
-          formattedPhone,
-          recaptchaVerifierRef.current,
-        );
+      const result = await signInWithPhoneNumber(
+        auth,
+        formattedPhone,
+        recaptchaVerifierRef.current,
+      );
 
       setConfirmationResult(result);
       setStep("otp");
     } catch (err) {
       console.error("OTP send error:", err);
 
-      setError(
-        err.message ||
-          "Unable to send OTP. Please try again.",
-      );
+      setError(err.message || "Unable to send OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -99,10 +87,10 @@ export default function AdminAccess({ onClose }) {
     }
 
     if (!confirmationResult) {
-      setError(
-        "OTP session expired. Please request a new OTP.",
-      );
+      setError("OTP session expired. Please request a new OTP.");
+
       setStep("phone");
+
       return;
     }
 
@@ -110,65 +98,35 @@ export default function AdminAccess({ onClose }) {
       setLoading(true);
 
       // Firebase verifies OTP
-      const result =
-        await confirmationResult.confirm(otp);
+      const result = await confirmationResult.confirm(otp);
 
       const firebaseUser = result.user;
 
-      console.log(
-        "OTP VERIFIED SUCCESSFULLY",
-        firebaseUser,
-      );
+      // Check if authenticated user is an admin
+      const adminRef = doc(db, "admins", firebaseUser.uid);
 
-      // Firestore reference
-      const adminRef = doc(
-        db,
-        "admins",
-        firebaseUser.uid,
-      );
+      const adminSnap = await getDoc(adminRef);
 
-      // Check if admin already exists
-      const adminSnap =
-        await getDoc(adminRef);
+      // Reject users who are not authorized admins
+      if (!adminSnap.exists() || adminSnap.data().role !== "admin") {
+        await signOut(auth);
 
-      if (!adminSnap.exists()) {
-        /*
-          TEMPORARY FIRST-ADMIN BOOTSTRAP
-
-          This creates the first verified user
-          as an admin.
-
-          IMPORTANT:
-          We will remove this automatic behavior
-          after your first admin account is created.
-        */
-
-        await setDoc(adminRef, {
-          phone: firebaseUser.phoneNumber,
-          role: "admin",
-          createdAt: new Date().toISOString(),
-        });
-
-        console.log(
-          "First admin account created",
+        setError(
+          "Access denied. This mobile number is not authorized as an admin.",
         );
+
+        setStep("phone");
+        setOtp("");
+
+        return;
       }
 
-      console.log("ADMIN VERIFIED");
-
-      // Close Admin Access screen
+      // Successfully authenticated admin
       onClose();
-
     } catch (err) {
-      console.error(
-        "OTP verification error:",
-        err,
-      );
+      console.error("OTP verification error:", err);
 
-      setError(
-        err.message ||
-          "Invalid OTP. Please check and try again.",
-      );
+      setError(err.message || "Invalid OTP. Please check and try again.");
     } finally {
       setLoading(false);
     }
@@ -191,14 +149,10 @@ export default function AdminAccess({ onClose }) {
         </button>
 
         <div className="admin-brand">
-          <div className="admin-logo-mark">
-            🎮
-          </div>
+          <div className="admin-logo-mark">🎮</div>
 
           <div>
-            <p className="admin-brand-small">
-              OVERCLOCK
-            </p>
+            <p className="admin-brand-small">OVERCLOCK</p>
 
             <h1>Gaming Cafe</h1>
           </div>
@@ -211,10 +165,7 @@ export default function AdminAccess({ onClose }) {
 
           <h2>Admin Access</h2>
 
-          <p>
-            Sign in to access the Overclock
-            management console.
-          </p>
+          <p>Sign in to access the Overclock management console.</p>
         </div>
 
         {/* Firebase reCAPTCHA */}
@@ -222,54 +173,38 @@ export default function AdminAccess({ onClose }) {
 
         {step === "phone" ? (
           <form onSubmit={handleSubmit}>
-            <label className="admin-input-label">
-              MOBILE NUMBER
-            </label>
+            <label className="admin-input-label">MOBILE NUMBER</label>
 
             <div className="admin-phone-input">
-              <span className="country-code">
-                🇮🇳 +91
-              </span>
+              <span className="country-code">🇮🇳 +91</span>
 
               <input
                 type="tel"
                 placeholder="Enter mobile number"
                 value={phone}
                 onChange={(e) =>
-                  setPhone(
-                    e.target.value
-                      .replace(/\D/g, "")
-                      .slice(0, 10),
-                  )
+                  setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
                 }
                 maxLength={10}
                 required
               />
             </div>
 
-            {error && (
-              <p className="admin-error">
-                {error}
-              </p>
-            )}
+            {error && <p className="admin-error">{error}</p>}
 
             <button
               type="submit"
               className="admin-continue-btn"
               disabled={loading}
             >
-              {loading
-                ? "Sending OTP..."
-                : "Continue"}
+              {loading ? "Sending OTP..." : "Continue"}
 
               {!loading && <span>→</span>}
             </button>
           </form>
         ) : (
           <form onSubmit={verifyOtp}>
-            <label className="admin-input-label">
-              ENTER OTP
-            </label>
+            <label className="admin-input-label">ENTER OTP</label>
 
             <div className="admin-phone-input">
               <input
@@ -278,11 +213,7 @@ export default function AdminAccess({ onClose }) {
                 placeholder="6-digit OTP"
                 value={otp}
                 onChange={(e) =>
-                  setOtp(
-                    e.target.value
-                      .replace(/\D/g, "")
-                      .slice(0, 6),
-                  )
+                  setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
                 }
                 maxLength={6}
                 autoFocus
@@ -290,24 +221,16 @@ export default function AdminAccess({ onClose }) {
               />
             </div>
 
-            <p className="admin-otp-note">
-              OTP sent to +91 {phone}
-            </p>
+            <p className="admin-otp-note">OTP sent to +91 {phone}</p>
 
-            {error && (
-              <p className="admin-error">
-                {error}
-              </p>
-            )}
+            {error && <p className="admin-error">{error}</p>}
 
             <button
               type="submit"
               className="admin-continue-btn"
               disabled={loading}
             >
-              {loading
-                ? "Verifying..."
-                : "Verify & Continue"}
+              {loading ? "Verifying..." : "Verify & Continue"}
 
               {!loading && <span>→</span>}
             </button>
@@ -329,23 +252,15 @@ export default function AdminAccess({ onClose }) {
         <div className="admin-security-note">
           <span>🛡</span>
 
-          <p>
-            Secure authentication via mobile OTP
-          </p>
+          <p>Secure authentication via mobile OTP</p>
         </div>
 
-        <button
-          type="button"
-          className="admin-back-btn"
-          onClick={onClose}
-        >
+        <button type="button" className="admin-back-btn" onClick={onClose}>
           ← Continue as Cafe Visitor
         </button>
       </div>
 
-      <p className="admin-footer">
-        OVERCLOCK GAMING CAFE • ADMIN PORTAL
-      </p>
+      <p className="admin-footer">OVERCLOCK GAMING CAFE • ADMIN PORTAL</p>
     </div>
   );
 }
