@@ -4,13 +4,15 @@ import { auth, db } from "./config/firebase";
 import {
   collection,
   addDoc,
-  getDocs,
-  query as firestoreQuery,
-  orderBy,
-  onSnapshot,
+  deleteDoc,
   doc,
+  getDocs,
+  onSnapshot,
+  query as firestoreQuery,
   setDoc,
   updateDoc,
+  writeBatch,
+  orderBy,
 } from "firebase/firestore";
 import { useAuth } from "./context/AuthContext";
 import AdminAccess from "./auth/AdminAccess";
@@ -46,7 +48,8 @@ export default function App() {
   const [systems, setSystems] = useState([]);
   const [systemsLoading, setSystemsLoading] = useState(true);
 
-  const [games, setGames] = useState(() => load("oc_games", seedGames));
+  const [games, setGames] = useState([]);
+  const [gamesLoading, setGamesLoading] = useState(true);
 
   const [sessions, setSessions] = useState([]);
 
@@ -71,13 +74,15 @@ export default function App() {
   const [sessionSystem, setSessionSystem] = useState(null);
   const [endingSessionSystem, setEndingSessionSystem] = useState(null);
 
+  const gamesRef = collection(db, "games");
+
   // useEffect(() => {
   //   localStorage.setItem("oc_systems", JSON.stringify(systems));
   // }, [systems]); // Systems are now stored in Firestore
 
-  useEffect(() => {
-    localStorage.setItem("oc_games", JSON.stringify(games));
-  }, [games]);
+  // useEffect(() => {
+  //   localStorage.setItem("oc_games", JSON.stringify(games));
+  // }, [games]);
 
   // useEffect(() => {
   //   localStorage.setItem("oc_sessions", JSON.stringify(sessions));
@@ -95,7 +100,7 @@ export default function App() {
         const sessionsRef = collection(db, "sessions");
 
         const sessionsQuery = firestoreQuery(
-          sessionsRef,
+          collection(db, "sessions"),
           orderBy("endedAt", "desc"),
         );
 
@@ -161,6 +166,52 @@ export default function App() {
         console.error("Error listening to systems:", error);
 
         setSystemsLoading(false);
+      },
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const gamesQuery = firestoreQuery(
+      collection(db, "games"),
+      orderBy("title", "asc"),
+    );
+
+    async function loadGames() {
+      try {
+        const snapshot = await getDocs(gamesQuery);
+
+        // Seed Firestore only if empty
+        if (snapshot.empty) {
+          console.log("No games found. Seeding initial games...");
+
+          await seedGamesToFirestore();
+        }
+      } catch (error) {
+        console.error("Error checking games:", error);
+        setGamesLoading(false);
+      }
+    }
+
+    loadGames();
+
+    const unsubscribe = onSnapshot(
+      gamesQuery,
+      (snapshot) => {
+        const loadedGames = snapshot.docs.map((docSnap) => ({
+          ...docSnap.data(),
+          id: docSnap.id,
+        }));
+
+        console.log("Games loaded from Firestore:", loadedGames.length);
+
+        setGames(loadedGames);
+        setGamesLoading(false);
+      },
+      (error) => {
+        console.error("Realtime games error:", error);
+        setGamesLoading(false);
       },
     );
 
@@ -320,42 +371,89 @@ export default function App() {
     }
   }
 
+  async function seedGamesToFirestore() {
+    try {
+      const batch = writeBatch(db);
+
+      seedGames.forEach((game) => {
+        const gameRef = doc(db, "games", String(game.id));
+
+        batch.set(gameRef, game);
+      });
+
+      await batch.commit();
+
+      console.log("Games seeded successfully!");
+    } catch (error) {
+      console.error("Error seeding games:", error);
+    }
+  }
+
+  async function updateGameInFirestore(gameId, updates) {
+    try {
+      const gameRef = doc(db, "games", String(gameId));
+
+      await updateDoc(gameRef, updates);
+    } catch (error) {
+      console.error("Error updating game:", error);
+      throw error;
+    }
+  }
+
   async function openImagePicker(game) {
     if (!isAdmin) {
       alert("Admin access required.");
       return;
     }
+
     setImagePickerGame(game);
     setImageOptions([]);
     setImageSearchLoading(true);
 
-    const results = await searchGameImages(game.title);
+    try {
+      const results = await searchGameImages(game.title);
 
-    setImageOptions(results);
-    setImageSearchLoading(false);
+      setImageOptions(results);
+    } catch (error) {
+      console.error("Error searching game images:", error);
+    } finally {
+      setImageSearchLoading(false);
+    }
   }
 
-  function selectGameImage(image) {
-    if (!imagePickerGame) return;
+  async function selectGameImage(image) {
+    if (!imagePickerGame || !isAdmin) return;
 
-    setGames((prev) =>
-      prev.map((game) =>
-        game.id === imagePickerGame.id ? { ...game, image } : game,
-      ),
-    );
+    try {
+      await updateGameInFirestore(imagePickerGame.id, { image });
 
-    setImagePickerGame(null);
-    setImageOptions([]);
+      setImagePickerGame(null);
+      setImageOptions([]);
+    } catch (error) {
+      console.error("Error updating game image:", error);
+
+      alert("Unable to update game image.");
+    }
   }
 
-  function deleteGame(id) {
+  async function deleteGame(id) {
     if (!isAdmin) {
       alert("Admin access required.");
       return;
     }
 
-    if (window.confirm("Remove this game from the library?")) {
-      setGames((prev) => prev.filter((game) => game.id !== id));
+    const confirmed = window.confirm("Remove this game from the library?");
+
+    if (!confirmed) return;
+
+    try {
+      await deleteDoc(doc(db, "games", String(id)));
+
+      console.log("Game deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting game:", error);
+
+      alert("Unable to delete game.");
     }
   }
 
@@ -384,51 +482,41 @@ export default function App() {
   }
 
   async function saveGame(gameData) {
-    if (!isAdmin) {
-      alert("Admin access required.");
-      return;
-    }
+    if (!isAdmin) return;
 
-    // EDIT EXISTING GAME
-    if (editingGame) {
-      setGames((prev) =>
-        prev.map((game) =>
-          game.id === editingGame.id
-            ? {
-                ...game,
-                ...gameData,
-              }
-            : game,
-        ),
-      );
-    } else {
-      // ADD NEW GAME
+    try {
+      if (editingGame) {
+        // UPDATE EXISTING GAME
+        const gameRef = doc(db, "games", String(editingGame.id));
 
-      const newGame = {
-        ...gameData,
-        id: Date.now(),
-        image: "",
-      };
+        await updateDoc(gameRef, {
+          ...gameData,
+          id: editingGame.id,
+        });
+      } else {
+        // ADD NEW GAME
+        const newGameRef = doc(collection(db, "games"));
 
-      // Automatically try to get game image
-      try {
-        const image = await fetchGameImage(gameData.title);
-
-        if (image) {
-          newGame.image = image;
-        }
-      } catch (error) {
-        console.error("Could not automatically fetch game image:", error);
+        await setDoc(newGameRef, {
+          ...gameData,
+          id: newGameRef.id,
+          createdAt: new Date().toISOString(),
+        });
       }
 
-      setGames((prev) => [newGame, ...prev]);
-    }
+      // Close modal
+      setShowGameForm(false);
+      setEditingGame(null);
 
-    setShowGameForm(false);
-    setEditingGame(null);
+      console.log("Game saved successfully!");
+    } catch (error) {
+      console.error("Error saving game:", error);
+
+      alert("Unable to save game. Please try again.");
+    }
   }
 
-  if (loading || systemsLoading) {
+  if (loading || systemsLoading || gamesLoading) {
     return <div className="app-loading">Loading Overclock Gaming Cafe...</div>;
   }
 
@@ -439,124 +527,124 @@ export default function App() {
   return (
     <>
       (
-        <div className="app-shell">
-          <Sidebar
+      <div className="app-shell">
+        <Sidebar
+          page={page}
+          setPage={setPage}
+          isAdmin={isAdmin}
+          user={user}
+          onAdminLogin={() => setShowAdminAccess(true)}
+          handleLogout={handleLogout}
+        />
+
+        <main className="main">
+          <Header
             page={page}
-            setPage={setPage}
+            now={now}
+            onAdminAccess={() => setShowAdminAccess(true)}
             isAdmin={isAdmin}
             user={user}
-            onAdminLogin={() => setShowAdminAccess(true)}
             handleLogout={handleLogout}
+            onAdminLogin={() => setShowAdminAccess(true)}
           />
 
-          <main className="main">
-            <Header
-              page={page}
-              now={now}
-              onAdminAccess={() => setShowAdminAccess(true)}
-              isAdmin={isAdmin}
-              user={user}
-              handleLogout={handleLogout}
-              onAdminLogin={() => setShowAdminAccess(true)}
-            />
-
-            {page === "dashboard" && (
-              <Dashboard
-                systems={systems}
-                games={games}
-                active={active}
-                available={available}
-                revenue={revenue}
-                todayRevenue={todayRevenue}
-                todayCompletedSessions={todayCompletedSessions}
-                setPage={setPage}
-                startStop={startStopSession}
-                setEditingSystem={setEditingSystem}
-                isAdmin={isAdmin}
-              />
-            )}
-
-            {page === "systems" && (
-              <Systems
-                systems={systems}
-                games={games}
-                startStop={startStopSession}
-                setEditingSystem={setEditingSystem}
-                isAdmin={isAdmin}
-              />
-            )}
-
-            {page === "games" && (
-              <GameLibrary
-                games={filteredGames}
-                allGames={games}
-                query={query}
-                setQuery={setQuery}
-                platformFilter={platformFilter}
-                setPlatformFilter={setPlatformFilter}
-                ownershipFilter={ownershipFilter}
-                setOwnershipFilter={setOwnershipFilter}
-                isAdmin={isAdmin}
-                add={() => {
-                  if (!isAdmin) return;
-
-                  setEditingGame(null);
-                  setShowGameForm(true);
-                }}
-                edit={(game) => {
-                  if (!isAdmin) return;
-
-                  setEditingGame(game);
-                  setShowGameForm(true);
-                }}
-                del={(id) => {
-                  if (!isAdmin) return;
-
-                  deleteGame(id);
-                }}
-                changeImage={(game) => {
-                  if (!isAdmin) return;
-
-                  openImagePicker(game);
-                }}
-              />
-            )}
-
-            {page === "sessions" && isAdmin && (
-              <Sessions sessions={sessions} revenue={revenue} />
-            )}
-
-            {page === "pricing" && isAdmin && <Pricing />}
-          </main>
-          <SessionModal
-            system={sessionSystem}
-            onConfirm={confirmStartSession}
-            onClose={() => setSessionSystem(null)}
-          />
-          <StopSessionModal
-            system={endingSessionSystem}
-            onConfirm={confirmEndSession}
-            onClose={() => setEndingSessionSystem(null)}
-          />
-          <ImagePicker
-            game={imagePickerGame}
-            options={imageOptions}
-            loading={imageSearchLoading}
-            onSelect={selectGameImage}
-            onClose={() => setImagePickerGame(null)}
-          />
-          {showGameForm && isAdmin && (
-            <GameForm
-              game={editingGame}
+          {page === "dashboard" && (
+            <Dashboard
               systems={systems}
-              onSave={saveGame}
-              onClose={() => {
-                setShowGameForm(false);
+              games={games}
+              active={active}
+              available={available}
+              revenue={revenue}
+              todayRevenue={todayRevenue}
+              todayCompletedSessions={todayCompletedSessions}
+              setPage={setPage}
+              startStop={startStopSession}
+              setEditingSystem={setEditingSystem}
+              isAdmin={isAdmin}
+            />
+          )}
+
+          {page === "systems" && (
+            <Systems
+              systems={systems}
+              games={games}
+              startStop={startStopSession}
+              setEditingSystem={setEditingSystem}
+              isAdmin={isAdmin}
+            />
+          )}
+
+          {page === "games" && (
+            <GameLibrary
+              games={filteredGames}
+              allGames={games}
+              query={query}
+              setQuery={setQuery}
+              platformFilter={platformFilter}
+              setPlatformFilter={setPlatformFilter}
+              ownershipFilter={ownershipFilter}
+              setOwnershipFilter={setOwnershipFilter}
+              isAdmin={isAdmin}
+              add={() => {
+                if (!isAdmin) return;
+
                 setEditingGame(null);
+                setShowGameForm(true);
+              }}
+              edit={(game) => {
+                if (!isAdmin) return;
+
+                setEditingGame(game);
+                setShowGameForm(true);
+              }}
+              del={(id) => {
+                if (!isAdmin) return;
+
+                deleteGame(id);
+              }}
+              changeImage={(game) => {
+                if (!isAdmin) return;
+
+                openImagePicker(game);
               }}
             />
           )}
-        </div>
+
+          {page === "sessions" && isAdmin && (
+            <Sessions sessions={sessions} revenue={revenue} />
+          )}
+
+          {page === "pricing" && isAdmin && <Pricing />}
+        </main>
+        <SessionModal
+          system={sessionSystem}
+          onConfirm={confirmStartSession}
+          onClose={() => setSessionSystem(null)}
+        />
+        <StopSessionModal
+          system={endingSessionSystem}
+          onConfirm={confirmEndSession}
+          onClose={() => setEndingSessionSystem(null)}
+        />
+        <ImagePicker
+          game={imagePickerGame}
+          options={imageOptions}
+          loading={imageSearchLoading}
+          onSelect={selectGameImage}
+          onClose={() => setImagePickerGame(null)}
+        />
+        {showGameForm && isAdmin && (
+          <GameForm
+            game={editingGame}
+            systems={systems}
+            onSave={saveGame}
+            onClose={() => {
+              setShowGameForm(false);
+              setEditingGame(null);
+            }}
+          />
+        )}
+      </div>
       )
     </>
   );
