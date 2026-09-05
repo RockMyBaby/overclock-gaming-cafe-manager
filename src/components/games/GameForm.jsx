@@ -10,7 +10,6 @@ export default function GameForm({ game, systems, onSave, onClose }) {
     source: "Purchased",
     installedOn: [],
   });
-  console.log("no. of systems", systems.length, "systems", systems);
 
   useEffect(() => {
     if (game) {

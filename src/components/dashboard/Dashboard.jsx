@@ -7,6 +7,8 @@ export default function Dashboard({
   active,
   available,
   revenue,
+  todayRevenue,
+  todayCompletedSessions,
   setPage,
   startStop,
   setEditingSystem,
@@ -36,8 +38,10 @@ export default function Dashboard({
         <Stat
           icon="₹"
           label="Today's Recorded Revenue"
-          value={`₹${revenue}`}
-          note="Completed sessions"
+          value={`₹${todayRevenue}`}
+          note={`${todayCompletedSessions} completed session${
+            todayCompletedSessions !== 1 ? "s" : ""
+          }`}
         />
       </div>
       <div className="section-head">

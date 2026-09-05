@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { signOut } from "firebase/auth";
 import { auth, db } from "./config/firebase";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  query as firestoreQuery,
+  orderBy,
+  onSnapshot,
+  doc,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { useAuth } from "./context/AuthContext";
 import AdminAccess from "./auth/AdminAccess";
 
@@ -32,11 +43,12 @@ export default function App() {
   const { user, isAdmin, loading } = useAuth();
   const [showAdminAccess, setShowAdminAccess] = useState(false);
 
-  const [systems, setSystems] = useState(() => load("oc_systems", seedSystems));
+  const [systems, setSystems] = useState([]);
+  const [systemsLoading, setSystemsLoading] = useState(true);
 
   const [games, setGames] = useState(() => load("oc_games", seedGames));
 
-  const [sessions, setSessions] = useState(() => load("oc_sessions", []));
+  const [sessions, setSessions] = useState([]);
 
   const [query, setQuery] = useState("");
   const [platformFilter, setPlatformFilter] = useState("All");
@@ -59,27 +71,100 @@ export default function App() {
   const [sessionSystem, setSessionSystem] = useState(null);
   const [endingSessionSystem, setEndingSessionSystem] = useState(null);
 
-  console.log("AUTH STATE:", {
-    user,
-    isAdmin,
-    loading,
-  });
-  useEffect(() => {
-    localStorage.setItem("oc_systems", JSON.stringify(systems));
-  }, [systems]);
+  // useEffect(() => {
+  //   localStorage.setItem("oc_systems", JSON.stringify(systems));
+  // }, [systems]); // Systems are now stored in Firestore
 
   useEffect(() => {
     localStorage.setItem("oc_games", JSON.stringify(games));
   }, [games]);
 
-  useEffect(() => {
-    localStorage.setItem("oc_sessions", JSON.stringify(sessions));
-  }, [sessions]);
+  // useEffect(() => {
+  //   localStorage.setItem("oc_sessions", JSON.stringify(sessions));
+  // }, [sessions]);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 60000);
 
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    async function loadSessions() {
+      try {
+        const sessionsRef = collection(db, "sessions");
+
+        const sessionsQuery = firestoreQuery(
+          sessionsRef,
+          orderBy("endedAt", "desc"),
+        );
+
+        const snapshot = await getDocs(sessionsQuery);
+
+        const loadedSessions = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setSessions(loadedSessions);
+
+        console.log("Sessions loaded from Firestore:", loadedSessions);
+      } catch (error) {
+        console.error("Error loading sessions:", error);
+      }
+    }
+
+    loadSessions();
+  }, []);
+
+  useEffect(() => {
+    async function checkAndSeedSystems() {
+      try {
+        const systemsRef = collection(db, "systems");
+        const snapshot = await getDocs(systemsRef);
+
+        if (snapshot.empty) {
+          console.log("No systems found. Seeding Firestore...");
+          await seedSystemsToFirestore();
+        }
+      } catch (error) {
+        console.error("Error checking systems:", error);
+      }
+    }
+
+    checkAndSeedSystems();
+  }, []);
+
+  useEffect(() => {
+    const systemsRef = collection(db, "systems");
+
+    const unsubscribe = onSnapshot(
+      systemsRef,
+      (snapshot) => {
+        const loadedSystems = snapshot.docs
+          .map((docSnap) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+          }))
+          .sort((a, b) => {
+            const order = ["PS5-01", "PS5-02", "PS5-03", "PS4-01"];
+
+            return order.indexOf(a.id) - order.indexOf(b.id);
+          });
+
+        setSystems(loadedSystems);
+        setSystemsLoading(false);
+
+        console.log("Realtime systems update:", loadedSystems);
+      },
+      (error) => {
+        console.error("Error listening to systems:", error);
+
+        setSystemsLoading(false);
+      },
+    );
+
+    return () => unsubscribe();
   }, []);
 
   function handleLogout() {
@@ -97,8 +182,29 @@ export default function App() {
 
   const available = systems.filter((system) => system.status === "Available");
 
+  function getISTDateString(dateValue) {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(dateValue));
+  }
+
+  const todayIST = getISTDateString(new Date());
+
+  const todaySessions = sessions.filter(
+    (session) =>
+      session.endedAt && getISTDateString(session.endedAt) === todayIST,
+  );
+
+  const todayRevenue = todaySessions.reduce(
+    (total, session) => total + Number(session.amount || 0),
+    0,
+  );
+
   const revenue = sessions.reduce(
-    (total, session) => total + session.amount,
+    (total, session) => total + Number(session.amount || 0),
     0,
   );
 
@@ -136,72 +242,82 @@ export default function App() {
     setSessionSystem(system);
   }
 
-  function confirmStartSession({ players, customer }) {
+  async function confirmStartSession({ players, customer }) {
     if (!sessionSystem) return;
 
-    setSystems((prev) =>
-      prev.map((item) =>
-        item.id === sessionSystem.id
-          ? {
-              ...item,
-              status: "Playing",
-              players,
-              customer,
-              startedAt: new Date().toISOString(),
-            }
-          : item,
-      ),
-    );
+    const latestSystem = systems.find((s) => s.id === sessionSystem.id);
+
+    if (latestSystem?.status === "Playing") {
+      alert("This system has already been started from another device.");
+
+      setSessionSystem(null);
+      return;
+    }
+
+    await updateSystemInFirestore(sessionSystem.id, {
+      status: "Playing",
+      players,
+      customer,
+      startedAt: new Date().toISOString(),
+    });
 
     setSessionSystem(null);
   }
 
-  function confirmEndSession({ minutes, amount }) {
+  const todayCompletedSessions = todaySessions.length;
+
+  async function confirmEndSession({ minutes, amount }) {
     if (!endingSessionSystem) return;
 
-    const completedSession = {
-      id: Date.now(),
+    try {
+      const completedSession = {
+        system: endingSessionSystem.id,
 
-      system: endingSessionSystem.id,
+        systemName: endingSessionSystem.name,
 
-      systemName: endingSessionSystem.name,
+        players: endingSessionSystem.players,
 
-      players: endingSessionSystem.players,
+        customer: endingSessionSystem.customer || "Walk-in",
 
-      customer: endingSessionSystem.customer || "Walk-in",
+        startedAt: endingSessionSystem.startedAt,
 
-      startedAt: endingSessionSystem.startedAt,
+        endedAt: new Date().toISOString(),
 
-      endedAt: new Date().toISOString(),
+        minutes,
 
-      minutes,
+        amount,
 
-      amount,
+        completedDate: new Date().toISOString(),
+      };
 
-      date: new Date().toISOString(),
-    };
+      // SAVE SESSION TO FIRESTORE
+      const docRef = await addDoc(collection(db, "sessions"), completedSession);
 
-    setSessions((prev) => [completedSession, ...prev]);
+      console.log("Session saved successfully to Firestore:", docRef.id);
 
-    setSystems((prev) =>
-      prev.map((item) =>
-        item.id === endingSessionSystem.id
-          ? {
-              ...item,
+      // ADD FIRESTORE SESSION TO LOCAL STATE
+      setSessions((prev) => [
+        {
+          id: docRef.id,
+          ...completedSession,
+        },
+        ...prev,
+      ]);
 
-              status: "Available",
+      // RESET SYSTEM IN FIRESTORE
+      await updateSystemInFirestore(endingSessionSystem.id, {
+        status: "Available",
+        players: 0,
+        customer: "",
+        startedAt: "",
+      });
 
-              players: 0,
+      setEndingSessionSystem(null);
+    } catch (error) {
+      console.error("Error saving completed session:", error);
 
-              customer: "",
-
-              startedAt: "",
-            }
-          : item,
-      ),
-    );
-
-    setEndingSessionSystem(null);
+      alert("Unable to save session. Please try again.");
+    }
   }
 
   async function openImagePicker(game) {
@@ -240,6 +356,30 @@ export default function App() {
 
     if (window.confirm("Remove this game from the library?")) {
       setGames((prev) => prev.filter((game) => game.id !== id));
+    }
+  }
+
+  async function seedSystemsToFirestore() {
+    try {
+      for (const system of seedSystems) {
+        await setDoc(doc(db, "systems", system.id), system);
+      }
+
+      console.log("Systems seeded to Firestore successfully!");
+    } catch (error) {
+      console.error("Error seeding systems:", error);
+    }
+  }
+
+  async function updateSystemInFirestore(systemId, updates) {
+    try {
+      const systemRef = doc(db, "systems", systemId);
+
+      await updateDoc(systemRef, updates);
+    } catch (error) {
+      console.error("Error updating system:", error);
+
+      alert("Failed to update system. Please try again.");
     }
   }
 
@@ -288,7 +428,7 @@ export default function App() {
     setEditingGame(null);
   }
 
-  if (loading) {
+  if (loading || systemsLoading) {
     return <div className="app-loading">Loading Overclock Gaming Cafe...</div>;
   }
 
@@ -298,9 +438,7 @@ export default function App() {
 
   return (
     <>
-      {showAdminAccess ? (
-        <AdminAccess onClose={() => setShowAdminAccess(false)} />
-      ) : (
+      (
         <div className="app-shell">
           <Sidebar
             page={page}
@@ -329,6 +467,8 @@ export default function App() {
                 active={active}
                 available={available}
                 revenue={revenue}
+                todayRevenue={todayRevenue}
+                todayCompletedSessions={todayCompletedSessions}
                 setPage={setPage}
                 startStop={startStopSession}
                 setEditingSystem={setEditingSystem}
@@ -417,7 +557,7 @@ export default function App() {
             />
           )}
         </div>
-      )}
+      )
     </>
   );
 }

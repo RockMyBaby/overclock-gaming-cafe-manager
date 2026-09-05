@@ -44,7 +44,16 @@ export default function Sessions({ sessions, revenue }) {
               {sessions.length ? (
                 sessions.map((s) => (
                   <tr key={s.id}>
-                    <td>{s.date}</td>
+                    <td>
+                      {s.endedAt
+                        ? new Date(s.endedAt).toLocaleDateString(
+                            "en-IN",
+                            {
+                              timeZone: "Asia/Kolkata",
+                            },
+                          )
+                        : "-"}
+                    </td>
                     <td>{s.system}</td>
                     <td>{s.players}</td>
                     <td>{s.minutes} min</td>
@@ -66,4 +75,3 @@ export default function Sessions({ sessions, revenue }) {
     </section>
   );
 }
-
