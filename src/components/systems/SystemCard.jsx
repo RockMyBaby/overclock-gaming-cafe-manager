@@ -1,6 +1,13 @@
 import { useState } from "react";
+import { formatIST } from "../../utils/date";
 
-export default function SystemCard({ system, games, startStop, edit, isAdmin }) {
+export default function SystemCard({
+  system,
+  games,
+  startStop,
+  edit,
+  isAdmin,
+}) {
   const [showAllGames, setShowAllGames] = useState(false);
 
   const installedGames = games.filter((game) =>
@@ -41,7 +48,9 @@ export default function SystemCard({ system, games, startStop, edit, isAdmin }) 
               {system.players > 1 ? "s" : ""}
             </span>
 
-            <span>◷ Started {system.startedAt}</span>
+            <span>
+              ◷ Started {formatIST(system.startedAt)}
+            </span>
           </>
         ) : (
           <span>Ready for the next squad</span>

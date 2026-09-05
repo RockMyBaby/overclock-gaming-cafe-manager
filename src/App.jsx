@@ -14,6 +14,8 @@ import ImagePicker from "./components/games/ImagePicker";
 import Sessions from "./components/sessions/Sessions";
 import Pricing from "./components/pricing/Pricing";
 import GameForm from "./components/games/GameForm";
+import SessionModal from "./components/sessions/SessionModal";
+import StopSessionModal from "./components/sessions/StopSessionModal";
 
 import Modal from "./components/common/Modal";
 
@@ -53,6 +55,10 @@ export default function App() {
   const [imageSearchLoading, setImageSearchLoading] = useState(false);
 
   const [now, setNow] = useState(new Date());
+
+  const [sessionSystem, setSessionSystem] = useState(null);
+  const [endingSessionSystem, setEndingSessionSystem] = useState(null);
+
   console.log("AUTH STATE:", {
     user,
     isAdmin,
@@ -119,63 +125,83 @@ export default function App() {
       alert("Admin access required to manage gaming sessions.");
       return;
     }
+
+    // SYSTEM IS ALREADY PLAYING → OPEN END SESSION MODAL
     if (system.status === "Playing") {
-      const minutes = Math.max(
-        30,
-        Number(prompt("How many minutes was the session?", "60")) || 60,
-      );
-
-      const rate = PRICING[system.players] || 100;
-
-      const amount = Math.round((rate * minutes) / 60);
-
-      setSessions((prev) => [
-        {
-          id: Date.now(),
-          system: system.id,
-          players: system.players,
-          minutes,
-          amount,
-          date: new Date().toLocaleDateString(),
-        },
-        ...prev,
-      ]);
-
-      setSystems((prev) =>
-        prev.map((item) =>
-          item.id === system.id
-            ? {
-                ...item,
-                status: "Available",
-                players: 0,
-                customer: "",
-                startedAt: "",
-              }
-            : item,
-        ),
-      );
-
+      setEndingSessionSystem(system);
       return;
     }
 
-    const players = Number(prompt("How many players? (1-4)", "1")) || 1;
+    // SYSTEM IS AVAILABLE → OPEN START SESSION MODAL
+    setSessionSystem(system);
+  }
 
-    const customer =
-      prompt("Customer / group name (optional)", "") || "Walk-in";
+  function confirmStartSession({ players, customer }) {
+    if (!sessionSystem) return;
 
     setSystems((prev) =>
       prev.map((item) =>
-        item.id === system.id
+        item.id === sessionSystem.id
           ? {
               ...item,
               status: "Playing",
-              players: Math.min(4, Math.max(1, players)),
+              players,
               customer,
-              startedAt: now.toTimeString().slice(0, 5),
+              startedAt: new Date().toISOString(),
             }
           : item,
       ),
     );
+
+    setSessionSystem(null);
+  }
+
+  function confirmEndSession({ minutes, amount }) {
+    if (!endingSessionSystem) return;
+
+    const completedSession = {
+      id: Date.now(),
+
+      system: endingSessionSystem.id,
+
+      systemName: endingSessionSystem.name,
+
+      players: endingSessionSystem.players,
+
+      customer: endingSessionSystem.customer || "Walk-in",
+
+      startedAt: endingSessionSystem.startedAt,
+
+      endedAt: new Date().toISOString(),
+
+      minutes,
+
+      amount,
+
+      date: new Date().toISOString(),
+    };
+
+    setSessions((prev) => [completedSession, ...prev]);
+
+    setSystems((prev) =>
+      prev.map((item) =>
+        item.id === endingSessionSystem.id
+          ? {
+              ...item,
+
+              status: "Available",
+
+              players: 0,
+
+              customer: "",
+
+              startedAt: "",
+            }
+          : item,
+      ),
+    );
+
+    setEndingSessionSystem(null);
   }
 
   async function openImagePicker(game) {
@@ -362,7 +388,16 @@ export default function App() {
 
             {page === "pricing" && isAdmin && <Pricing />}
           </main>
-
+          <SessionModal
+            system={sessionSystem}
+            onConfirm={confirmStartSession}
+            onClose={() => setSessionSystem(null)}
+          />
+          <StopSessionModal
+            system={endingSessionSystem}
+            onConfirm={confirmEndSession}
+            onClose={() => setEndingSessionSystem(null)}
+          />
           <ImagePicker
             game={imagePickerGame}
             options={imageOptions}
