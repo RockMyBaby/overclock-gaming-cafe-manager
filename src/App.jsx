@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { signOut } from "firebase/auth";
 import { auth, db } from "./config/firebase";
+import { useAuth } from "./context/AuthContext";
+import AdminAccess from "./auth/AdminAccess";
 
 import Sidebar from "./components/layout/Sidebar";
 import Header from "./components/layout/Header";
@@ -10,9 +13,9 @@ import GameLibrary from "./components/games/GameLibrary";
 import ImagePicker from "./components/games/ImagePicker";
 import Sessions from "./components/sessions/Sessions";
 import Pricing from "./components/pricing/Pricing";
+import GameForm from "./components/games/GameForm";
 
 import Modal from "./components/common/Modal";
-import AdminAccess from "./auth/AdminAccess";
 
 import { PRICING } from "./constants/pricing";
 import { seedSystems } from "./data/seedSystems";
@@ -24,6 +27,7 @@ import { fetchGameImage, searchGameImages } from "./services/rawgApi";
 
 export default function App() {
   const [page, setPage] = useState("dashboard");
+  const { user, isAdmin, loading } = useAuth();
   const [showAdminAccess, setShowAdminAccess] = useState(false);
 
   const [systems, setSystems] = useState(() => load("oc_systems", seedSystems));
@@ -49,7 +53,11 @@ export default function App() {
   const [imageSearchLoading, setImageSearchLoading] = useState(false);
 
   const [now, setNow] = useState(new Date());
-
+  console.log("AUTH STATE:", {
+    user,
+    isAdmin,
+    loading,
+  });
   useEffect(() => {
     localStorage.setItem("oc_systems", JSON.stringify(systems));
   }, [systems]);
@@ -67,6 +75,17 @@ export default function App() {
 
     return () => clearInterval(timer);
   }, []);
+
+  function handleLogout() {
+    signOut(auth)
+      .then(() => {
+        console.log("Admin logged out");
+        setPage("dashboard");
+      })
+      .catch((error) => {
+        console.error("Logout error:", error);
+      });
+  }
 
   const active = systems.filter((system) => system.status === "Playing");
 
@@ -96,6 +115,10 @@ export default function App() {
   }, [games, query, platformFilter, ownershipFilter]);
 
   function startStopSession(system) {
+    if (!isAdmin) {
+      alert("Admin access required to manage gaming sessions.");
+      return;
+    }
     if (system.status === "Playing") {
       const minutes = Math.max(
         30,
@@ -156,6 +179,10 @@ export default function App() {
   }
 
   async function openImagePicker(game) {
+    if (!isAdmin) {
+      alert("Admin access required.");
+      return;
+    }
     setImagePickerGame(game);
     setImageOptions([]);
     setImageSearchLoading(true);
@@ -180,9 +207,67 @@ export default function App() {
   }
 
   function deleteGame(id) {
+    if (!isAdmin) {
+      alert("Admin access required.");
+      return;
+    }
+
     if (window.confirm("Remove this game from the library?")) {
       setGames((prev) => prev.filter((game) => game.id !== id));
     }
+  }
+
+  async function saveGame(gameData) {
+    if (!isAdmin) {
+      alert("Admin access required.");
+      return;
+    }
+
+    // EDIT EXISTING GAME
+    if (editingGame) {
+      setGames((prev) =>
+        prev.map((game) =>
+          game.id === editingGame.id
+            ? {
+                ...game,
+                ...gameData,
+              }
+            : game,
+        ),
+      );
+    } else {
+      // ADD NEW GAME
+
+      const newGame = {
+        ...gameData,
+        id: Date.now(),
+        image: "",
+      };
+
+      // Automatically try to get game image
+      try {
+        const image = await fetchGameImage(gameData.title);
+
+        if (image) {
+          newGame.image = image;
+        }
+      } catch (error) {
+        console.error("Could not automatically fetch game image:", error);
+      }
+
+      setGames((prev) => [newGame, ...prev]);
+    }
+
+    setShowGameForm(false);
+    setEditingGame(null);
+  }
+
+  if (loading) {
+    return <div className="app-loading">Loading Overclock Gaming Cafe...</div>;
+  }
+
+  if (showAdminAccess) {
+    return <AdminAccess onClose={() => setShowAdminAccess(false)} />;
   }
 
   return (
@@ -191,13 +276,24 @@ export default function App() {
         <AdminAccess onClose={() => setShowAdminAccess(false)} />
       ) : (
         <div className="app-shell">
-          <Sidebar page={page} setPage={setPage} />
+          <Sidebar
+            page={page}
+            setPage={setPage}
+            isAdmin={isAdmin}
+            user={user}
+            onAdminLogin={() => setShowAdminAccess(true)}
+            handleLogout={handleLogout}
+          />
 
           <main className="main">
             <Header
               page={page}
               now={now}
               onAdminAccess={() => setShowAdminAccess(true)}
+              isAdmin={isAdmin}
+              user={user}
+              handleLogout={handleLogout}
+              onAdminLogin={() => setShowAdminAccess(true)}
             />
 
             {page === "dashboard" && (
@@ -210,6 +306,7 @@ export default function App() {
                 setPage={setPage}
                 startStop={startStopSession}
                 setEditingSystem={setEditingSystem}
+                isAdmin={isAdmin}
               />
             )}
 
@@ -219,6 +316,7 @@ export default function App() {
                 games={games}
                 startStop={startStopSession}
                 setEditingSystem={setEditingSystem}
+                isAdmin={isAdmin}
               />
             )}
 
@@ -232,24 +330,37 @@ export default function App() {
                 setPlatformFilter={setPlatformFilter}
                 ownershipFilter={ownershipFilter}
                 setOwnershipFilter={setOwnershipFilter}
+                isAdmin={isAdmin}
                 add={() => {
+                  if (!isAdmin) return;
+
                   setEditingGame(null);
                   setShowGameForm(true);
                 }}
                 edit={(game) => {
+                  if (!isAdmin) return;
+
                   setEditingGame(game);
                   setShowGameForm(true);
                 }}
-                del={deleteGame}
-                changeImage={openImagePicker}
+                del={(id) => {
+                  if (!isAdmin) return;
+
+                  deleteGame(id);
+                }}
+                changeImage={(game) => {
+                  if (!isAdmin) return;
+
+                  openImagePicker(game);
+                }}
               />
             )}
 
-            {page === "sessions" && (
+            {page === "sessions" && isAdmin && (
               <Sessions sessions={sessions} revenue={revenue} />
             )}
 
-            {page === "pricing" && <Pricing />}
+            {page === "pricing" && isAdmin && <Pricing />}
           </main>
 
           <ImagePicker
@@ -259,6 +370,17 @@ export default function App() {
             onSelect={selectGameImage}
             onClose={() => setImagePickerGame(null)}
           />
+          {showGameForm && isAdmin && (
+            <GameForm
+              game={editingGame}
+              systems={systems}
+              onSave={saveGame}
+              onClose={() => {
+                setShowGameForm(false);
+                setEditingGame(null);
+              }}
+            />
+          )}
         </div>
       )}
     </>

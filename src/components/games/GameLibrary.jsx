@@ -13,6 +13,7 @@ export default function GameLibrary({
   edit,
   del,
   changeImage,
+  isAdmin,
 }) {
   return (
     <section>
@@ -21,14 +22,16 @@ export default function GameLibrary({
           <h2>Your complete game catalog</h2>
 
           <p>
-            Search, add, edit ownership and instantly see
-            which console has each game installed.
+            Search, add, edit ownership and instantly see which console has each
+            game installed.
           </p>
         </div>
 
-        <button className="primary big" onClick={add}>
-          ＋ Add Game
-        </button>
+        {isAdmin && (
+          <button className="primary big" onClick={add}>
+            ＋ Add Game
+          </button>
+        )}
       </div>
 
       <div className="filters">
@@ -40,9 +43,7 @@ export default function GameLibrary({
 
         <select
           value={platformFilter}
-          onChange={(e) =>
-            setPlatformFilter(e.target.value)
-          }
+          onChange={(e) => setPlatformFilter(e.target.value)}
         >
           <option>All</option>
           <option>PS5</option>
@@ -51,9 +52,7 @@ export default function GameLibrary({
 
         <select
           value={ownershipFilter}
-          onChange={(e) =>
-            setOwnershipFilter(e.target.value)
-          }
+          onChange={(e) => setOwnershipFilter(e.target.value)}
         >
           <option>All</option>
           <option>Owned</option>
@@ -66,25 +65,12 @@ export default function GameLibrary({
 
       <div className="catalog-count">
         <b>{games.length}</b> games shown •{" "}
-
         <span>
-          {
-            allGames.filter(
-              (game) => game.ownership === "Owned",
-            ).length
-          }{" "}
-          owned
+          {allGames.filter((game) => game.ownership === "Owned").length} owned
         </span>
-
         •{" "}
-
         <span>
-          {
-            allGames.filter(
-              (game) =>
-                game.ownership === "Not Owned",
-            ).length
-          }{" "}
+          {allGames.filter((game) => game.ownership === "Not Owned").length}{" "}
           marked Not Owned
         </span>
       </div>
@@ -94,32 +80,17 @@ export default function GameLibrary({
           <article
             key={game.id}
             className={`game-card ${
-              game.ownership === "Not Owned"
-                ? "not-owned"
-                : ""
+              game.ownership === "Not Owned" ? "not-owned" : ""
             }`}
           >
             <div className="game-cover">
               {game.image ? (
-                <img
-                  src={game.image}
-                  alt={game.title}
-                  loading="lazy"
-                />
+                <img src={game.image} alt={game.title} loading="lazy" />
               ) : (
                 <>
-                  <span>
-                    {game.platform.includes("PS5")
-                      ? "PS5"
-                      : "PS4"}
-                  </span>
+                  <span>{game.platform.includes("PS5") ? "PS5" : "PS4"}</span>
 
-                  <strong>
-                    {game.title
-                      .split(" ")
-                      .slice(0, 2)
-                      .join(" ")}
-                  </strong>
+                  <strong>{game.title.split(" ").slice(0, 2).join(" ")}</strong>
                 </>
               )}
             </div>
@@ -139,49 +110,37 @@ export default function GameLibrary({
               <div className="installed-on">
                 {game.installedOn?.length > 0 ? (
                   <div>
-                    <span className="installed-label">
-                      🎮 Installed on:
-                    </span>
+                    <span className="installed-label">🎮 Installed on:</span>
 
                     <div className="system-tags">
                       {game.installedOn.map((system) => (
-                        <span
-                          key={system}
-                          className="system-tag"
-                        >
+                        <span key={system} className="system-tag">
                           {system}
                         </span>
                       ))}
                     </div>
                   </div>
                 ) : (
-                  <span>
-                    ○ Not installed on any system
-                  </span>
+                  <span>○ Not installed on any system</span>
                 )}
               </div>
 
-              <div className="game-actions">
-                <button onClick={() => edit(game)}>
-                  Edit
-                </button>
+              {isAdmin && (
+                <div className="game-actions">
+                  <button onClick={() => edit(game)}>Edit</button>
 
-                <button
-                  className="change-image"
-                  onClick={() =>
-                    changeImage(game)
-                  }
-                >
-                  🖼 Change Image
-                </button>
+                  <button
+                    className="change-image"
+                    onClick={() => changeImage(game)}
+                  >
+                    🖼 Change Image
+                  </button>
 
-                <button
-                  className="delete"
-                  onClick={() => del(game.id)}
-                >
-                  Remove
-                </button>
-              </div>
+                  <button className="delete" onClick={() => del(game.id)}>
+                    Remove
+                  </button>
+                </div>
+              )}
             </div>
           </article>
         ))}
@@ -189,8 +148,7 @@ export default function GameLibrary({
 
       {games.length === 0 && (
         <div className="empty">
-          No games found. Try another search or add a new
-          game.
+          No games found. Try another search or add a new game.
         </div>
       )}
     </section>

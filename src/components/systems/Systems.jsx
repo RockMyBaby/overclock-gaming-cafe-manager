@@ -6,6 +6,7 @@ export default function Systems({
   games,
   startStop,
   setEditingSystem,
+  isAdmin,
 }) {
   return (
     <section>
@@ -23,6 +24,7 @@ export default function Systems({
             games={games}
             startStop={startStop}
             edit={setEditingSystem}
+            isAdmin={isAdmin}
           />
         ))}
       </div>
