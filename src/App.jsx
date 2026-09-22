@@ -14,8 +14,7 @@ import ImagePicker from "./components/games/ImagePicker";
 import Sessions from "./components/sessions/Sessions";
 import Pricing from "./components/pricing/Pricing";
 import GameForm from "./components/games/GameForm";
-
-import Modal from "./components/common/Modal";
+import SystemForm from "./components/systems/SystemForm";
 
 import { PRICING } from "./constants/pricing";
 import { seedSystems } from "./data/seedSystems";
@@ -176,6 +175,58 @@ export default function App() {
           : item,
       ),
     );
+  }
+
+  function saveSystem(updates) {
+    if (!isAdmin) {
+      alert("Admin access required.");
+      return;
+    }
+
+    setSystems((prev) =>
+      prev.map((item) => {
+        if (item.id !== updates.id) return item;
+
+        const wasPlaying = item.status === "Playing";
+        const nowPlaying = updates.status === "Playing";
+
+        return {
+          ...item,
+          name: updates.name,
+          status: updates.status,
+          players: nowPlaying ? updates.players : 0,
+          customer: nowPlaying ? updates.customer || "Walk-in" : "",
+          // Only stamp a fresh start time when a session is newly opened.
+          // Editing an already-playing session keeps its original start time.
+          startedAt: nowPlaying
+            ? wasPlaying
+              ? item.startedAt
+              : now.toTimeString().slice(0, 5)
+            : "",
+        };
+      }),
+    );
+
+    // Installed games live on each game record (game.installedOn), so
+    // syncing "installed on this system" means updating the game library,
+    // not the system itself.
+    setGames((prev) =>
+      prev.map((game) => {
+        const shouldBeInstalled = updates.installedGameIds.includes(game.id);
+        const isInstalled = Boolean(game.installedOn?.includes(updates.id));
+
+        if (shouldBeInstalled === isInstalled) return game;
+
+        return {
+          ...game,
+          installedOn: shouldBeInstalled
+            ? [...(game.installedOn || []), updates.id]
+            : (game.installedOn || []).filter((id) => id !== updates.id),
+        };
+      }),
+    );
+
+    setEditingSystem(null);
   }
 
   async function openImagePicker(game) {
@@ -379,6 +430,16 @@ export default function App() {
                 setShowGameForm(false);
                 setEditingGame(null);
               }}
+            />
+          )}
+
+          {editingSystem && isAdmin && (
+            <SystemForm
+              key={editingSystem.id}
+              system={editingSystem}
+              games={games}
+              onSave={saveSystem}
+              onClose={() => setEditingSystem(null)}
             />
           )}
         </div>
