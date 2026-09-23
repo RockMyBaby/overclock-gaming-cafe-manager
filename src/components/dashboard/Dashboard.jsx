@@ -12,6 +12,16 @@ export default function Dashboard({
   setEditingSystem,
   isAdmin,
 }) {
+  const systemTypeCounts = systems.reduce((counts, system) => {
+    counts[system.type] = (counts[system.type] || 0) + 1;
+    return counts;
+  }, {});
+
+  const systemTypeNote =
+    Object.entries(systemTypeCounts)
+      .map(([type, count]) => `${count} ${type}`)
+      .join(" + ") || "No systems configured";
+
   return (
     <section>
       <div className="stats">
@@ -19,7 +29,7 @@ export default function Dashboard({
           icon="🎮"
           label="Total Systems"
           value={systems.length}
-          note="3 PS5 + 1 PS4"
+          note={systemTypeNote}
         />
         <Stat
           icon="⚡"
@@ -96,8 +106,8 @@ export default function Dashboard({
           <h3>Quick Tip</h3>
           <p>
             When a game is uninstalled from PS5-01 and installed on PS5-03,
-            simply edit the game from <b>Game Library</b> and change “Installed
-            On”. No code changes needed.
+            simply edit the game from <b>Game Library</b> and change "Installed
+            On". No code changes needed.
           </p>
           <div className="tip-line">✓ Data automatically saved in browser</div>
         </div>
