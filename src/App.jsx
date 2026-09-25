@@ -14,8 +14,7 @@ import ImagePicker from "./components/games/ImagePicker";
 import Sessions from "./components/sessions/Sessions";
 import Pricing from "./components/pricing/Pricing";
 import GameForm from "./components/games/GameForm";
-
-import Modal from "./components/common/Modal";
+import SystemForm from "./components/systems/SystemForm";
 
 import { PRICING } from "./constants/pricing";
 import { seedSystems } from "./data/seedSystems";
@@ -41,6 +40,8 @@ export default function App() {
   const [ownershipFilter, setOwnershipFilter] = useState("All");
 
   const [editingSystem, setEditingSystem] = useState(null);
+
+  const [showSystemForm, setShowSystemForm] = useState(false);
 
   const [editingGame, setEditingGame] = useState(null);
 
@@ -176,6 +177,92 @@ export default function App() {
           : item,
       ),
     );
+  }
+
+  // Existing systems use a "{TYPE}-{NN}" id (e.g. "PS5-01"), so a new
+  // system's id keeps that same convention instead of a raw timestamp.
+  function nextSystemId(type) {
+    const numbers = systems
+      .filter((item) => item.type === type)
+      .map((item) => Number(item.id.split("-")[1]) || 0);
+
+    const next = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
+
+    return `${type}-${String(next).padStart(2, "0")}`;
+  }
+
+  function saveSystem(updates) {
+    if (!isAdmin) {
+      alert("Admin access required.");
+      return;
+    }
+
+    const isNewSystem = !updates.id;
+    const id = isNewSystem ? nextSystemId(updates.type) : updates.id;
+
+    setSystems((prev) => {
+      if (isNewSystem) {
+        return [
+          ...prev,
+          {
+            id,
+            name: updates.name,
+            type: updates.type,
+            // A system that didn't exist a moment ago can't already have
+            // a session in progress, so it always starts Available.
+            status: "Available",
+            players: 0,
+            customer: "",
+            startedAt: "",
+          },
+        ];
+      }
+
+      return prev.map((item) => {
+        if (item.id !== id) return item;
+
+        const wasPlaying = item.status === "Playing";
+        const nowPlaying = updates.status === "Playing";
+
+        return {
+          ...item,
+          name: updates.name,
+          status: updates.status,
+          players: nowPlaying ? updates.players : 0,
+          customer: nowPlaying ? updates.customer || "Walk-in" : "",
+          // Only stamp a fresh start time when a session is newly opened.
+          // Editing an already-playing session keeps its original start time.
+          startedAt: nowPlaying
+            ? wasPlaying
+              ? item.startedAt
+              : now.toTimeString().slice(0, 5)
+            : "",
+        };
+      });
+    });
+
+    // Installed games live on each game record (game.installedOn), so
+    // syncing "installed on this system" means updating the game library,
+    // not the system itself. Works the same whether the system is brand
+    // new or already existed, since it only depends on `id`.
+    setGames((prev) =>
+      prev.map((game) => {
+        const shouldBeInstalled = updates.installedGameIds.includes(game.id);
+        const isInstalled = Boolean(game.installedOn?.includes(id));
+
+        if (shouldBeInstalled === isInstalled) return game;
+
+        return {
+          ...game,
+          installedOn: shouldBeInstalled
+            ? [...(game.installedOn || []), id]
+            : (game.installedOn || []).filter((gid) => gid !== id),
+        };
+      }),
+    );
+
+    setEditingSystem(null);
+    setShowSystemForm(false);
   }
 
   async function openImagePicker(game) {
@@ -316,6 +403,12 @@ export default function App() {
                 games={games}
                 startStop={startStopSession}
                 setEditingSystem={setEditingSystem}
+                add={() => {
+                  if (!isAdmin) return;
+
+                  setEditingSystem(null);
+                  setShowSystemForm(true);
+                }}
                 isAdmin={isAdmin}
               />
             )}
@@ -378,6 +471,19 @@ export default function App() {
               onClose={() => {
                 setShowGameForm(false);
                 setEditingGame(null);
+              }}
+            />
+          )}
+
+          {(editingSystem || showSystemForm) && isAdmin && (
+            <SystemForm
+              key={editingSystem ? editingSystem.id : "new-system"}
+              system={editingSystem}
+              games={games}
+              onSave={saveSystem}
+              onClose={() => {
+                setEditingSystem(null);
+                setShowSystemForm(false);
               }}
             />
           )}

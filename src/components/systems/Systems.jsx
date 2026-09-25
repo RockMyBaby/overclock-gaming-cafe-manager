@@ -6,10 +6,24 @@ export default function Systems({
   games,
   startStop,
   setEditingSystem,
+  add,
   isAdmin,
 }) {
   return (
     <section>
+      <div className="section-head">
+        <div>
+          <h2>Systems</h2>
+          <p>Manage every console — status, sessions and installed games.</p>
+        </div>
+
+        {isAdmin && (
+          <button className="primary big" onClick={add}>
+            ＋ Add System
+          </button>
+        )}
+      </div>
+
       <div className="notice">
         💡 <b>Easy management:</b> Click Edit to change
         players, customer, installed games or system status
