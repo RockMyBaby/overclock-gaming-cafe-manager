@@ -4,7 +4,7 @@ export default function Pricing() {
   return (
     <section>
       <div className="pricing-banner">
-        <span>OVERCLOCK GAMING CAFE</span>
+        <span>Overclock Gaming Cafe</span>
 
         <h2>Pricing Per Hour</h2>
 
@@ -21,13 +21,13 @@ export default function Pricing() {
               key={players}
             >
               <span>
-                {players} PLAYER
-                {players > 1 ? "S" : ""}
+                {players} player
+                {players > 1 ? "s" : ""}
               </span>
 
               <strong>₹{price}</strong>
 
-              <small>PER HOUR</small>
+              <small>per hour</small>
 
               <p>
                 Effective per-person total: ₹
@@ -42,8 +42,8 @@ export default function Pricing() {
         <h3>Current Rate Card</h3>
 
         <p>
-          1 Player ₹100/hour • 2 Players ₹180/hour •
-          3 Players ₹250/hour • 4 Players ₹300/hour
+          1 player is ₹100/hour, 2 players is ₹180/hour,
+          3 players is ₹250/hour, and 4 players is ₹300/hour.
         </p>
 
         <p className="muted">

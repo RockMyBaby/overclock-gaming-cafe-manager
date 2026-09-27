@@ -49,7 +49,7 @@ export default function SystemCard({ system, games, startStop, edit, isAdmin }) 
       </div>
 
       <div className="installed">
-        <span>INSTALLED GAMES</span>
+        <span>Installed games</span>
 
         {installedGames.length > 0 ? (
           <>

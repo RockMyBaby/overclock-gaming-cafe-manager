@@ -13,8 +13,8 @@
 
   padding: 20px;
 
-  background: rgba(5, 8, 15, 0.82);
-  backdrop-filter: blur(8px);
+  background: rgba(5, 5, 10, 0.85);
+  backdrop-filter: blur(4px);
 }
 
 .game-form-modal {
@@ -23,16 +23,14 @@
 
   overflow-y: auto;
 
-  background: #111827;
+  background: var(--surface);
 
-  border: 1px solid rgba(255, 119, 0, 0.3);
-  border-radius: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
 
   padding: 24px;
 
-  box-shadow:
-    0 25px 70px rgba(0, 0, 0, 0.65),
-    0 0 40px rgba(255, 119, 0, 0.08);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6), 0 0 60px rgba(179, 75, 255, 0.08);
 }
 
 .game-form-header {
@@ -45,27 +43,28 @@
 
 .game-form-header h2 {
   margin: 4px 0 0;
-  font-size: 24px;
+  font: 700 22px var(--font-display);
 }
 
 .game-form-close {
   width: 36px;
   height: 36px;
 
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
 
-  background: rgba(255, 255, 255, 0.04);
-  color: #94a3b8;
+  background: var(--surface-2);
+  color: var(--muted);
 
-  font-size: 24px;
+  font-size: 22px;
 
   cursor: pointer;
+  transition: border-color .15s ease;
 }
 
 .game-form-close:hover {
-  color: white;
-  border-color: rgba(255, 119, 0, 0.5);
+  color: var(--paper);
+  border-color: var(--cyan);
 }
 
 .form-group {
@@ -78,12 +77,10 @@
 }
 
 .form-group label {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
 
-  letter-spacing: 0.08em;
-
-  color: #94a3b8;
+  color: var(--muted);
 }
 
 .form-group input,
@@ -94,19 +91,21 @@
 
   padding: 12px 14px;
 
-  border-radius: 9px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 6px;
+  border: 1px solid var(--line);
 
-  background: #0b1220;
-  color: white;
+  background: var(--ink);
+  color: var(--paper);
+
+  font-family: var(--font-body);
 
   outline: none;
+  transition: border-color .15s ease;
 }
 
 .form-group input:focus,
 .form-group select:focus {
-  border-color: #ff7700;
-  box-shadow: 0 0 0 3px rgba(255, 119, 0, 0.1);
+  border-color: var(--cyan);
 }
 
 .form-row {
@@ -128,16 +127,21 @@
 
   padding: 9px 12px;
 
-  border-radius: 8px;
+  border-radius: 6px;
 
-  background: #0b1220;
-  border: 1px solid rgba(148, 163, 184, 0.15);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
 
   cursor: pointer;
+  transition: border-color .15s ease;
+}
+
+.system-checkbox:hover {
+  border-color: var(--cyan);
 }
 
 .system-checkbox input {
-  accent-color: #ff7700;
+  accent-color: var(--cyan);
 }
 
 .game-form-actions {

@@ -61,7 +61,7 @@ export default function GameForm({ game, systems, onSave, onClose }) {
       <div className="game-form-modal">
         <div className="game-form-header">
           <div>
-            <p className="eyebrow">GAME MANAGEMENT</p>
+            <p className="eyebrow">Game management</p>
 
             <h2>{game ? "Edit Game" : "Add New Game"}</h2>
           </div>
@@ -73,7 +73,7 @@ export default function GameForm({ game, systems, onSave, onClose }) {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>GAME TITLE *</label>
+            <label>Game title *</label>
 
             <input
               type="text"
@@ -85,7 +85,7 @@ export default function GameForm({ game, systems, onSave, onClose }) {
           </div>
 
           <div className="form-group">
-            <label>GENRE</label>
+            <label>Genre</label>
 
             <input
               type="text"
@@ -97,7 +97,7 @@ export default function GameForm({ game, systems, onSave, onClose }) {
 
           <div className="form-row">
             <div className="form-group">
-              <label>PLATFORM</label>
+              <label>Platform</label>
 
               <select
                 value={form.platform}
@@ -126,7 +126,7 @@ export default function GameForm({ game, systems, onSave, onClose }) {
             </div>
 
             <div className="form-group">
-              <label>OWNERSHIP</label>
+              <label>Ownership</label>
 
               <select
                 value={form.ownership}
@@ -139,7 +139,7 @@ export default function GameForm({ game, systems, onSave, onClose }) {
           </div>
 
           <div className="form-group">
-            <label>GAME SOURCE</label>
+            <label>Game Source</label>
 
             <select
               value={form.source}
@@ -154,7 +154,7 @@ export default function GameForm({ game, systems, onSave, onClose }) {
           </div>
 
           <div className="form-group">
-            <label>INSTALLED ON SYSTEMS</label>
+            <label>Installed on systems</label>
 
             <div className="system-checkboxes">
               {systems

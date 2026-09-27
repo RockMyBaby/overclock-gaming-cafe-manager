@@ -14,8 +14,8 @@ export default function Header({ page, now, onAdminAccess, isAdmin, user, handle
       <div>
         <p className="eyebrow">
           {page === "games"
-            ? "MASTER GAME CATALOG"
-            : "OVERCLOCK CONTROL CENTER"}
+            ? "Master game catalog"
+            : "Overclock control center"}
         </p>
 
         <h1>{pageTitles[page]}</h1>
