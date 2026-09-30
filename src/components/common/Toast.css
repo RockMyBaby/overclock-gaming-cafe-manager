@@ -1,0 +1,114 @@
+/* =========================================
+   TOASTS — native alert() messages, restyled
+========================================= */
+
+.toast-region {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(380px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.toast {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 12px 14px 18px;
+  overflow: hidden;
+  border: 1px solid var(--line-2);
+  border-radius: 14px;
+  background: rgba(18, 23, 31, 0.92);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 24px 48px -20px rgba(0, 0, 0, 0.9);
+  pointer-events: auto;
+  animation: toast-in 0.34s var(--ease);
+}
+
+.toast::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--live);
+  box-shadow: 0 0 14px var(--live);
+}
+
+.toast .icon {
+  margin-top: 1px;
+  color: var(--live);
+}
+
+.toast p {
+  flex: 1;
+  color: var(--tx-1);
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.toast-warning::before {
+  background: var(--money);
+  box-shadow: 0 0 14px var(--money);
+}
+
+.toast-warning .icon {
+  color: var(--money);
+}
+
+.toast-success::before {
+  background: var(--ready);
+  box-shadow: 0 0 14px var(--ready);
+}
+
+.toast-success .icon {
+  color: var(--ready);
+}
+
+.toast-close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--tx-3);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.toast-close:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--tx-1);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(18px) scale(0.98);
+  }
+}
+
+@media (max-width: 820px) {
+  .toast-region {
+    top: auto;
+    right: 16px;
+    bottom: calc(var(--dock-h) + 16px + env(safe-area-inset-bottom));
+    left: 16px;
+    width: auto;
+  }
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+  }
+}

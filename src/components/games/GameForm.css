@@ -1,112 +1,97 @@
 /* =========================================
-   GAME FORM MODAL
+   GAME FORM — fields, header and actions
+   (overlay + modal chrome live in styles.css)
 ========================================= */
 
-.game-form-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  padding: 20px;
-
-  background: rgba(5, 8, 15, 0.82);
-  backdrop-filter: blur(8px);
-}
-
 .game-form-modal {
-  width: min(620px, 100%);
-  max-height: 90vh;
-
-  overflow-y: auto;
-
-  background: #111827;
-
-  border: 1px solid rgba(255, 119, 0, 0.3);
-  border-radius: 18px;
-
-  padding: 24px;
-
-  box-shadow:
-    0 25px 70px rgba(0, 0, 0, 0.65),
-    0 0 40px rgba(255, 119, 0, 0.08);
+  width: min(640px, 100%);
 }
 
 .game-form-header {
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
-
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
+.game-form-header .eyebrow {
+  margin-bottom: 10px;
+}
+
 .game-form-header h2 {
-  margin: 4px 0 0;
-  font-size: 24px;
+  font: 600 22px/1.2 var(--font-display);
+  letter-spacing: -0.02em;
 }
 
 .game-form-close {
+  display: grid;
+  place-items: center;
+  flex: none;
   width: 36px;
   height: 36px;
-
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-
-  background: rgba(255, 255, 255, 0.04);
-  color: #94a3b8;
-
-  font-size: 24px;
-
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--tx-2);
+  font-size: 20px;
+  line-height: 1;
   cursor: pointer;
+  transition: color 0.18s, border-color 0.18s;
 }
 
 .game-form-close:hover {
-  color: white;
-  border-color: rgba(255, 119, 0, 0.5);
+  border-color: var(--line-3);
+  color: var(--tx-1);
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-
-  gap: 7px;
-
+  gap: 8px;
   margin-bottom: 18px;
 }
 
 .form-group label {
-  font-size: 11px;
-  font-weight: 700;
+  color: var(--tx-3);
+  font: 700 10.5px var(--font-ui);
+  letter-spacing: 0.14em;
+  transition: color 0.18s;
+}
 
-  letter-spacing: 0.08em;
-
-  color: #94a3b8;
+/* the label lights up while its field is active */
+.form-group:focus-within > label {
+  color: var(--live);
 }
 
 .form-group input,
 .form-group select {
   width: 100%;
-
-  box-sizing: border-box;
-
-  padding: 12px 14px;
-
-  border-radius: 9px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-
-  background: #0b1220;
-  color: white;
-
-  outline: none;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: var(--bg-3);
+  color: var(--tx-1);
+  font: 500 14px var(--font-ui);
+  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
 }
 
-.form-group input:focus,
-.form-group select:focus {
-  border-color: #ff7700;
-  box-shadow: 0 0 0 3px rgba(255, 119, 0, 0.1);
+.form-group input::placeholder {
+  color: var(--tx-3);
+}
+
+.form-group input:hover,
+.form-group select:hover {
+  border-color: var(--line-3);
+}
+
+.form-group input:focus-visible,
+.form-group select:focus-visible {
+  border-color: var(--live);
+  background: var(--bg-4);
+  box-shadow: 0 0 0 3px rgba(var(--live-rgb), 0.16);
+  outline: none;
 }
 
 .form-row {
@@ -121,39 +106,54 @@
   gap: 10px;
 }
 
-.system-checkbox {
+.form-group .system-checkbox {
   display: flex;
   align-items: center;
-  gap: 8px;
-
-  padding: 9px 12px;
-
-  border-radius: 8px;
-
-  background: #0b1220;
-  border: 1px solid rgba(148, 163, 184, 0.15);
-
+  gap: 9px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: var(--bg-3);
+  color: var(--tx-1);
+  font: 500 13px var(--font-ui);
+  letter-spacing: 0;
   cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
 }
 
-.system-checkbox input {
-  accent-color: #ff7700;
+.form-group .system-checkbox:hover {
+  border-color: var(--line-3);
+}
+
+.form-group .system-checkbox:has(input:checked) {
+  border-color: rgba(var(--live-rgb), 0.55);
+  background: rgba(var(--live-rgb), 0.09);
+}
+
+.form-group .system-checkbox input {
+  width: 16px;
+  min-height: 0;
+  height: 16px;
+  accent-color: var(--live);
 }
 
 .game-form-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-
-  margin-top: 28px;
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line-1);
 }
 
 @media (max-width: 600px) {
   .form-row {
     grid-template-columns: 1fr;
+    gap: 0;
   }
 
-  .game-form-modal {
-    padding: 18px;
+  .game-form-actions > * {
+    flex: 1;
   }
 }

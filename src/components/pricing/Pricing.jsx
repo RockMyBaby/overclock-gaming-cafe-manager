@@ -1,6 +1,9 @@
 import { PRICING } from "../../constants/pricing";
+import { Bar } from "../common/Meter";
 
 export default function Pricing() {
+  const tiers = Object.keys(PRICING).length;
+
   return (
     <section>
       <div className="pricing-banner">
@@ -20,6 +23,12 @@ export default function Pricing() {
               className="price-card"
               key={players}
             >
+              <div className="pips" aria-hidden="true">
+                {Array.from({ length: tiers }, (_, i) => (
+                  <i key={i} className={i < players ? "on" : ""} />
+                ))}
+              </div>
+
               <span>
                 {players} PLAYER
                 {players > 1 ? "S" : ""}
@@ -33,6 +42,12 @@ export default function Pricing() {
                 Effective per-person total: ₹
                 {Math.round(price / players)}
               </p>
+
+              <Bar
+                value={price / players}
+                max={PRICING[1] || price}
+                label="Per-person rate compared with one player"
+              />
             </div>
           ),
         )}

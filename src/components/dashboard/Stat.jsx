@@ -1,18 +1,27 @@
+import Icon from "../common/Icon";
+
 export default function Stat({
   icon,
   label,
   value,
   note,
+  tone = "neutral",
+  meter,
 }) {
   return (
-    <div className="stat">
-      <div className="stat-icon">{icon}</div>
-
-      <div>
+    <div className={`stat stat-${tone}`}>
+      <div className="stat-head">
         <span>{label}</span>
-        <strong>{value}</strong>
-        <small>{note}</small>
+
+        <div className="stat-icon">
+          <Icon name={icon} />
+        </div>
       </div>
+
+      <strong>{value}</strong>
+      <small>{note}</small>
+
+      {meter}
     </div>
   );
 }

@@ -58,15 +58,25 @@ export default function GameForm({ game, systems, onSave, onClose }) {
 
   return (
     <div className="game-form-overlay">
-      <div className="game-form-modal">
+      <div
+        className="game-form-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="game-form-title"
+      >
         <div className="game-form-header">
           <div>
             <p className="eyebrow">GAME MANAGEMENT</p>
 
-            <h2>{game ? "Edit Game" : "Add New Game"}</h2>
+            <h2 id="game-form-title">{game ? "Edit Game" : "Add New Game"}</h2>
           </div>
 
-          <button type="button" className="game-form-close" onClick={onClose}>
+          <button
+            type="button"
+            className="game-form-close"
+            aria-label="Close"
+            onClick={onClose}
+          >
             ×
           </button>
         </div>

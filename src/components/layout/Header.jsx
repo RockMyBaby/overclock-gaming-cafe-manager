@@ -1,3 +1,4 @@
+import Icon from "../common/Icon";
 import "./Header.css";
 
 const pageTitles = {
@@ -23,8 +24,9 @@ export default function Header({ page, now, onAdminAccess, isAdmin, user, handle
 
       <div className="header-actions">
         <div className="live">
-          ● LIVE
-          <span>
+          <span className="live-dot" />
+          LIVE
+          <span className="live-time">
             {now.toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
@@ -49,7 +51,7 @@ export default function Header({ page, now, onAdminAccess, isAdmin, user, handle
           </div>
         ) : (
           <button className="admin-login-btn" onClick={onAdminLogin}>
-            🔐 Admin Login
+            <Icon name="lock" size={15} /> Admin Login
           </button>
         )}
       </div>

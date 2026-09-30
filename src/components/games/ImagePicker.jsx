@@ -14,15 +14,18 @@ export default function ImagePicker({
     >
       <div
         className="modal image-picker-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="image-picker-title"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="modal-head">
           <div>
-            <h2>Choose Game Image</h2>
+            <h2 id="image-picker-title">Choose Game Image</h2>
             <p>{game.title}</p>
           </div>
 
-          <button type="button" onClick={onClose}>
+          <button type="button" aria-label="Close" onClick={onClose}>
             ×
           </button>
         </div>

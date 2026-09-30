@@ -1,5 +1,6 @@
 import SystemCard from "./SystemCard";
 import Badge from "../common/Badge";
+import Icon from "../common/Icon";
 
 export default function Systems({
   systems,
@@ -11,9 +12,12 @@ export default function Systems({
   return (
     <section>
       <div className="notice">
-        💡 <b>Easy management:</b> Click Edit to change
-        players, customer, installed games or system status
-        without touching code.
+        <Icon name="bulb" size={18} />
+        <span>
+          <b>Easy management:</b> Click Edit to change
+          players, customer, installed games or system status
+          without touching code.
+        </span>
       </div>
 
       <div className="system-grid">
@@ -52,23 +56,27 @@ export default function Systems({
                 )
                 .map((game) => (
                   <tr key={game.id}>
-                    <td>{game.title}</td>
+                    <td data-label="Game" className="cell-strong">
+                      {game.title}
+                    </td>
 
-                    <td>{game.platform}</td>
+                    <td data-label="Platform">{game.platform}</td>
 
-                    <td>
+                    <td data-label="Source">
                       <Badge value={game.source} />
                     </td>
 
-                    <td>
-                      {game.installedOn.map((system) => (
-                        <span
-                          key={system}
-                          className="system-tag"
-                        >
-                          {system}
-                        </span>
-                      ))}
+                    <td data-label="Installed On">
+                      <div className="tag-list">
+                        {game.installedOn.map((system) => (
+                          <span
+                            key={system}
+                            className="system-tag"
+                          >
+                            {system}
+                          </span>
+                        ))}
+                      </div>
                     </td>
                   </tr>
                 ))}

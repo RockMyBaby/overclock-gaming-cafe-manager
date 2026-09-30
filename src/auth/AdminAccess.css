@@ -1,452 +1,299 @@
 /* ========================================
-   ADMIN ACCESS PAGE
+   ADMIN ACCESS — mobile OTP sign-in
+   Same tokens as the rest of the app; the markup is unchanged.
 ======================================== */
 
 .admin-access-page {
-  min-height: 100vh;
-  width: 100%;
   position: relative;
-  overflow: hidden;
-
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-
-  background:
-    radial-gradient(
-      circle at 20% 20%,
-      rgba(0, 229, 255, 0.12),
-      transparent 30%
-    ),
-    radial-gradient(
-      circle at 80% 80%,
-      rgba(124, 58, 237, 0.12),
-      transparent 30%
-    ),
-    #060b14;
-
+  width: 100%;
+  min-height: 100vh;
   padding: 24px;
-  box-sizing: border-box;
+  overflow: hidden;
 }
 
-.admin-access-page::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-
-  background-image:
-    linear-gradient(
-      rgba(255, 255, 255, 0.025) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.025) 1px,
-      transparent 1px
-    );
-
-  background-size: 45px 45px;
-
-  pointer-events: none;
-}
-
+/* two soft pools of light behind the card */
 .admin-glow {
   position: absolute;
-  width: 420px;
-  height: 420px;
+  z-index: 0;
   border-radius: 50%;
-  filter: blur(120px);
-  opacity: 0.25;
+  filter: blur(110px);
   pointer-events: none;
 }
 
 .admin-glow-one {
-  background: #00e5ff;
-  top: -150px;
-  left: -120px;
+  top: -200px;
+  right: -140px;
+  width: 520px;
+  height: 520px;
+  background: rgba(var(--violet-rgb), 0.24);
 }
 
 .admin-glow-two {
-  background: #7c3aed;
-  right: -150px;
   bottom: -180px;
+  left: -120px;
+  width: 460px;
+  height: 460px;
+  background: rgba(var(--live-rgb), 0.16);
 }
 
 .admin-access-card {
   position: relative;
   z-index: 2;
-
   width: 100%;
-  max-width: 450px;
-
-  padding: 38px;
-
-  background: rgba(12, 19, 32, 0.88);
-  backdrop-filter: blur(18px);
-
-  border: 1px solid rgba(0, 229, 255, 0.18);
-
-  border-radius: 22px;
-
+  max-width: 440px;
+  padding: 38px 36px 32px;
+  border: 1px solid var(--line-2);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 40%),
+    rgba(15, 19, 26, 0.82);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  backdrop-filter: blur(22px) saturate(140%);
   box-shadow:
-    0 30px 80px rgba(0, 0, 0, 0.55),
-    0 0 50px rgba(0, 229, 255, 0.05);
+    0 40px 90px -30px rgba(0, 0, 0, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  animation: modal-in 0.4s var(--ease);
 }
 
 .admin-close-btn {
   position: absolute;
-
   top: 18px;
   left: 18px;
-
+  display: grid;
+  place-items: center;
   width: 36px;
   height: 36px;
-
-  border-radius: 9px;
-
-  border: 1px solid #263244;
-
-  background: #0a111d;
-
-  color: #aab4c5;
-
-  font-size: 20px;
-
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--tx-2);
+  font-size: 17px;
   cursor: pointer;
-
-  transition: 0.2s ease;
+  transition: color 0.18s, border-color 0.18s;
 }
 
 .admin-close-btn:hover {
-  color: #00e5ff;
-  border-color: #00e5ff;
+  border-color: rgba(var(--live-rgb), 0.5);
+  color: var(--live);
 }
 
 .admin-brand {
   display: flex;
   align-items: center;
   justify-content: center;
-
-  gap: 12px;
-
-  margin-top: 8px;
+  gap: 14px;
+  margin-top: 10px;
 }
 
 .admin-logo-mark {
-  width: 52px;
-  height: 52px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgba(var(--live-rgb), 0.35);
   border-radius: 14px;
-
-  background:
-    linear-gradient(
-      135deg,
-      rgba(0, 229, 255, 0.18),
-      rgba(0, 229, 255, 0.04)
-    );
-
-  border: 1px solid rgba(0, 229, 255, 0.3);
-
-  font-size: 25px;
+  background: linear-gradient(145deg, rgba(var(--live-rgb), 0.2), rgba(var(--violet-rgb), 0.2));
+  font-size: 22px;
+  box-shadow: 0 0 30px -6px rgba(var(--live-rgb), 0.55);
 }
 
 .admin-brand-small {
-  margin: 0;
-
-  color: #00e5ff;
-
-  font-size: 11px;
-
-  letter-spacing: 3px;
-
-  font-weight: 800;
+  color: var(--live);
+  font: 700 11px var(--font-ui);
+  letter-spacing: 0.3em;
 }
 
 .admin-brand h1 {
-  margin: 2px 0 0;
-
-  color: #fff;
-
-  font-size: 22px;
-
-  letter-spacing: -0.5px;
+  margin-top: 3px;
+  font: 600 20px/1.1 var(--font-display);
+  letter-spacing: -0.02em;
 }
 
 .admin-divider {
   height: 1px;
-
-  background:
-    linear-gradient(
-      90deg,
-      transparent,
-      rgba(0, 229, 255, 0.35),
-      transparent
-    );
-
-  margin: 28px 0;
+  margin: 26px 0;
+  background: var(--line-1);
 }
 
 .admin-heading {
+  margin-bottom: 26px;
   text-align: center;
-
-  margin-bottom: 30px;
 }
 
 .admin-lock {
-  display: inline-flex;
-
+  display: inline-grid;
+  place-items: center;
   width: 46px;
   height: 46px;
-
-  align-items: center;
-  justify-content: center;
-
-  margin-bottom: 10px;
-
+  margin-bottom: 12px;
+  border: 1px solid var(--line-2);
   border-radius: 50%;
-
-  background: rgba(0, 229, 255, 0.08);
-
-  font-size: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 19px;
 }
 
 .admin-heading h2 {
-  margin: 0;
-
-  color: #fff;
-
-  font-size: 27px;
+  font: 600 24px/1.2 var(--font-display);
+  letter-spacing: -0.02em;
 }
 
 .admin-heading p {
   max-width: 300px;
-
   margin: 10px auto 0;
-
-  color: #7f8a9d;
-
-  line-height: 1.6;
-
+  color: var(--tx-2);
   font-size: 14px;
+  line-height: 1.6;
 }
 
 .admin-input-label {
   display: block;
-
   margin-bottom: 9px;
-
-  color: #8d9ab0;
-
-  font-size: 11px;
-
-  font-weight: 800;
-
-  letter-spacing: 1.5px;
+  color: var(--tx-3);
+  font: 700 10.5px var(--font-ui);
+  letter-spacing: 0.14em;
 }
 
 .admin-phone-input {
   display: flex;
-
   align-items: center;
-
-  background: #080f1a;
-
-  border: 1px solid #263244;
-
-  border-radius: 11px;
-
   overflow: hidden;
-
-  transition: 0.2s ease;
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  background: var(--bg-3);
+  transition: border-color 0.18s, box-shadow 0.18s;
 }
 
 .admin-phone-input:focus-within {
-  border-color: #00e5ff;
-
-  box-shadow:
-    0 0 0 3px rgba(0, 229, 255, 0.08);
+  border-color: var(--live);
+  box-shadow: 0 0 0 3px rgba(var(--live-rgb), 0.16);
 }
 
 .country-code {
-  padding: 0 13px;
-
-  color: #d5dbea;
-
+  padding: 0 14px;
+  border-right: 1px solid var(--line-2);
+  color: var(--tx-2);
   font-size: 14px;
-
-  border-right: 1px solid #263244;
-
   white-space: nowrap;
 }
 
 .admin-phone-input input {
   width: 100%;
-
-  padding: 15px 14px;
-
-  border: none;
-
+  min-height: 50px;
+  padding: 0 16px;
+  border: 0;
   outline: none;
-
   background: transparent;
-
-  color: white;
-
-  font-size: 15px;
-
-  box-sizing: border-box;
+  color: var(--tx-1);
+  font: 500 15px var(--font-ui);
 }
 
 .admin-phone-input input::placeholder {
-  color: #526072;
+  color: var(--tx-3);
 }
 
 .admin-continue-btn {
-  width: 100%;
-
-  margin-top: 18px;
-
-  padding: 15px 18px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   gap: 10px;
-
-  border: none;
-
-  border-radius: 11px;
-
-  background:
-    linear-gradient(
-      135deg,
-      #00d9f5,
-      #00a8c7
-    );
-
-  color: #031016;
-
-  font-weight: 800;
-
-  font-size: 15px;
-
+  width: 100%;
+  min-height: 50px;
+  margin-top: 18px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--live);
+  color: #031218;
+  font: 700 15px var(--font-ui);
   cursor: pointer;
-
-  transition: 0.2s ease;
-
   box-shadow:
-    0 8px 25px rgba(0, 229, 255, 0.16);
+    0 0 0 1px rgba(var(--live-rgb), 0.5),
+    0 14px 30px -14px rgba(var(--live-rgb), 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: transform 0.15s var(--ease), filter 0.2s;
 }
 
-.admin-continue-btn:hover {
-  transform: translateY(-2px);
+.admin-continue-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
 
-  box-shadow:
-    0 12px 30px rgba(0, 229, 255, 0.25);
+.admin-continue-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .admin-continue-btn span {
-  font-size: 19px;
+  font-size: 18px;
 }
 
 .admin-security-note {
   display: flex;
-
-  justify-content: center;
   align-items: center;
-
-  gap: 7px;
-
-  margin-top: 20px;
-
-  color: #627086;
-
+  justify-content: center;
+  gap: 8px;
+  margin-top: 22px;
+  color: var(--tx-3);
   font-size: 12px;
-}
-
-.admin-security-note p {
-  margin: 0;
 }
 
 .admin-back-btn {
   width: 100%;
-
-  margin-top: 25px;
-
-  border: none;
-
+  margin-top: 22px;
+  border: 0;
   background: transparent;
-
-  color: #8995a8;
-
-  font-size: 13px;
-
+  color: var(--tx-2);
+  font: 600 13px var(--font-ui);
   cursor: pointer;
-
-  transition: 0.2s ease;
+  transition: color 0.18s;
 }
 
 .admin-back-btn:hover {
-  color: #00e5ff;
+  color: var(--live);
 }
 
 .admin-footer {
   position: absolute;
-
   bottom: 22px;
-
   z-index: 2;
-
-  color: #3f4b5d;
-
-  font-size: 10px;
-
-  font-weight: 700;
-
-  letter-spacing: 2px;
-}
-
-/* Mobile */
-@media (max-width: 550px) {
-  .admin-access-card {
-    padding: 30px 22px;
-  }
-
-  .admin-footer {
-    display: none;
-  }
+  color: var(--tx-3);
+  font: 700 10px var(--font-ui);
+  letter-spacing: 0.16em;
+  opacity: 0.8;
 }
 
 .admin-error {
-  margin: 10px 0 0;
-  color: #ff6b6b;
-  font-size: 12px;
-  line-height: 1.4;
+  margin-top: 10px;
+  color: var(--alert);
+  font-size: 12.5px;
+  line-height: 1.45;
 }
 
 .admin-otp-note {
-  margin: 10px 0 0;
-  color: #7f8a9d;
-  font-size: 12px;
+  margin-top: 10px;
+  color: var(--tx-3);
+  font-size: 12.5px;
 }
 
 .admin-change-number {
   width: 100%;
   margin-top: 14px;
+  border: 0;
   background: transparent;
-  border: none;
-  color: #00e5ff;
+  color: var(--live);
+  font: 600 13px var(--font-ui);
   cursor: pointer;
-  font-size: 13px;
 }
 
-.admin-continue-btn:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-  transform: none;
+@media (max-width: 550px) {
+  .admin-access-card {
+    padding: 32px 22px 26px;
+  }
+
+  .admin-footer {
+    display: none;
+  }
 }

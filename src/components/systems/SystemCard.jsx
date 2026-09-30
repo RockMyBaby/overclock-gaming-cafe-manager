@@ -1,7 +1,17 @@
 import { useState } from "react";
+import Icon from "../common/Icon";
+import { useNow } from "../../utils/useNow";
+import { elapsedMinutes, formatElapsed } from "../../utils/time";
 
 export default function SystemCard({ system, games, startStop, edit, isAdmin }) {
   const [showAllGames, setShowAllGames] = useState(false);
+
+  const isPlaying = system.status === "Playing";
+
+  // Elapsed time is derived from the existing startedAt value and only ticks
+  // while a session is live.
+  const now = useNow(isPlaying);
+  const elapsed = isPlaying ? elapsedMinutes(system.startedAt, now) : null;
 
   const installedGames = games.filter((game) =>
     game.installedOn?.includes(system.id),
@@ -10,14 +20,19 @@ export default function SystemCard({ system, games, startStop, edit, isAdmin }) 
   return (
     <article className={`system-card ${system.status.toLowerCase()}`}>
       <div className="card-top">
-        <div>
+        <div className="card-status">
           <span className={`status-dot ${system.status.toLowerCase()}`} />
           {system.status}
         </div>
 
         {isAdmin && (
-          <button className="icon-btn" onClick={() => edit(system)}>
-            ✎
+          <button
+            className="icon-btn"
+            aria-label={`Edit ${system.name}`}
+            title="Edit"
+            onClick={() => edit(system)}
+          >
+            <Icon name="edit" size={15} />
           </button>
         )}
       </div>
@@ -31,20 +46,35 @@ export default function SystemCard({ system, games, startStop, edit, isAdmin }) 
         </div>
       </div>
 
-      <div className="session-info">
-        {system.status === "Playing" ? (
+      <div className="session-info" key={system.status}>
+        {isPlaying ? (
           <>
-            <span>👤 {system.customer}</span>
+            <span className="si-row">
+              <Icon name="user" size={14} /> {system.customer}
+            </span>
 
-            <span>
-              👥 {system.players} player
+            <span className="si-row">
+              <Icon name="users" size={14} /> {system.players} player
               {system.players > 1 ? "s" : ""}
             </span>
 
-            <span>◷ Started {system.startedAt}</span>
+            <span className="si-row">
+              <Icon name="clock" size={14} /> Started {system.startedAt}
+            </span>
+
+            {elapsed !== null && (
+              <span
+                className="si-timer"
+                title="Elapsed"
+                aria-label={`Elapsed ${formatElapsed(elapsed)}`}
+              >
+                <Icon name="timer" size={15} />
+                {formatElapsed(elapsed)}
+              </span>
+            )}
           </>
         ) : (
-          <span>Ready for the next squad</span>
+          <span className="si-standby">Ready for the next squad</span>
         )}
       </div>
 
@@ -53,11 +83,13 @@ export default function SystemCard({ system, games, startStop, edit, isAdmin }) 
 
         {installedGames.length > 0 ? (
           <>
-            {(showAllGames ? installedGames : installedGames.slice(0, 3)).map(
-              (game) => (
-                <div key={game.id}>• {game.title}</div>
-              ),
-            )}
+            <ul className="game-list">
+              {(showAllGames ? installedGames : installedGames.slice(0, 3)).map(
+                (game) => (
+                  <li key={game.id}>{game.title}</li>
+                ),
+              )}
+            </ul>
 
             {installedGames.length > 3 && (
               <button
@@ -72,18 +104,17 @@ export default function SystemCard({ system, games, startStop, edit, isAdmin }) 
             )}
           </>
         ) : (
-          <div>No games installed</div>
+          <div className="installed-empty">No games installed</div>
         )}
       </div>
 
       {isAdmin && (
         <button
-          className={system.status === "Playing" ? "stop-btn" : "start-btn"}
+          className={isPlaying ? "stop-btn" : "start-btn"}
           onClick={() => startStop(system)}
         >
-          {system.status === "Playing"
-            ? "■ End & Bill Session"
-            : "▶ Start Session"}
+          <Icon name={isPlaying ? "stop" : "play"} size={14} />
+          {isPlaying ? "End & Bill Session" : "Start Session"}
         </button>
       )}
     </article>
